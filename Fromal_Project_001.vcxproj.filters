@@ -1,0 +1,134 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>qml;cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>qrc;rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Form Files">
+      <UniqueIdentifier>{99349809-55BA-4b9d-BF79-8FDBB0286EB3}</UniqueIdentifier>
+      <Extensions>ui</Extensions>
+    </Filter>
+    <Filter Include="Translation Files">
+      <UniqueIdentifier>{639EADAA-A684-42e4-A9AD-28FC9BCB8F7C}</UniqueIdentifier>
+      <Extensions>ts</Extensions>
+    </Filter>
+    <Filter Include="Source Files\后端">
+      <UniqueIdentifier>{44b1d355-f294-4823-a0cd-b84ee5df48d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\后端\模块">
+      <UniqueIdentifier>{921ae726-75a1-4c64-9366-57d5661a1e7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\后端\过程">
+      <UniqueIdentifier>{57e5a738-613b-4384-af6c-8d2572ca6be3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\后端">
+      <UniqueIdentifier>{42a0e550-23d5-40ec-a7e3-1fd8d7cee6ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\后端\过程">
+      <UniqueIdentifier>{2acd3624-e3dd-44c8-bbf0-dbf13e117f62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\后端\模块">
+      <UniqueIdentifier>{c88aa9f5-9d58-4b9c-bde0-274ac59c0916}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="FuncWatcher.qrc">
+      <Filter>Resource Files</Filter>
+    </QtRcc>
+  </ItemGroup>
+  <ItemGroup>
+    <QtUic Include="MainWatchDialog.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="source\FuncWatcherDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\前后端桥梁.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Back\CmdRecv.cpp">
+      <Filter>Source Files\后端\模块</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Back\CodeString.cpp">
+      <Filter>Source Files\后端\模块</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Back\DataPicker.cpp">
+      <Filter>Source Files\后端\模块</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Back\DispatcherHolder.cpp">
+      <Filter>Source Files\后端\模块</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Back\ModuleParser.cpp">
+      <Filter>Source Files\后端\模块</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Back\调试模式.cpp">
+      <Filter>Source Files\后端\过程</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Back\注入模式.cpp">
+      <Filter>Source Files\后端\过程</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Back\常用工具函数.cpp">
+      <Filter>Source Files\后端</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Back\全局变量.cpp">
+      <Filter>Source Files\后端</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\Back\CmdRecv.h">
+      <Filter>Header Files\后端\模块</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Back\CodeString.h">
+      <Filter>Header Files\后端\模块</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Back\DataPicker.h">
+      <Filter>Header Files\后端\模块</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Back\DispatcherHolder.h">
+      <Filter>Header Files\后端\模块</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Back\ModuleParser.h">
+      <Filter>Header Files\后端\模块</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Back\MyDbg.h">
+      <Filter>Header Files\后端\过程</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Back\MyInject.h">
+      <Filter>Header Files\后端\过程</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Back\MyProc.h">
+      <Filter>Header Files\后端\过程</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Back\GlobalFuncAndVar.h">
+      <Filter>Header Files\后端</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Back\GlobalStruct.h">
+      <Filter>Header Files\后端</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Back\x96.h">
+      <Filter>Header Files\后端</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Bridge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="source\FuncWatcherDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+  </ItemGroup>
+</Project>

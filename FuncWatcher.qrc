@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/FuncWatcher">
+        <file>MyIcons/DetachIcon.png</file>
+        <file>MyIcons/FileIcon.png</file>
+        <file>MyIcons/RestartIcon.png</file>
+        <file>MyIcons/StartIcon.png</file>
+        <file>MyIcons/StopIcon.png</file>
+    </qresource>
+</RCC>
