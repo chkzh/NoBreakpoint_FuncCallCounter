@@ -100,9 +100,12 @@ public:
 		IsSysBreakPointReached = false;
 
 		this->KillRequsetFlag = false;
+		this->DetachRequestFlag = false;
 
 		this->LoopThreadHandle = NULL;
 		this->LoopThreadId = NULL;
+
+		this->GpaBreakPoint = NULL;
 
 		hProc = NULL;
 		hMainThread = NULL;
@@ -144,6 +147,8 @@ public:
 	std::vector<CALL_DATA_ENTRY>* visitLatestRecords() override;//【同步】
 	void leaveCallRecords() override;//【同步】
 	PVOID locateEntry(int RecordIndex) override;//【同步】
+
+	DWORD checkProcessStatus() override;
 
 	bool open(const char* lpExePath) override;
 	void stop() override;

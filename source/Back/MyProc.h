@@ -12,11 +12,14 @@
 #define HT_IMPORT_ADDRESS_TABLE 0x1
 #define HT_GET_PROC_ADDRESS 0x2
 
+#define PS_PROCESS_AVAILABLE 0x1		//检查进程是否意外终止
+
 class MyProc
 {
 protected:
 	DWORD HookTargetFlag;
 	DWORD HookTypeFlag;
+	DWORD ProcessStatusFlag;
 
 public:
 	
@@ -24,6 +27,7 @@ public:
 	{
 		HookTargetFlag = 0;
 		HookTypeFlag = 0;
+		ProcessStatusFlag = 0;
 	}
 
 	virtual ~MyProc()
@@ -51,6 +55,7 @@ public:
 		this->HookTypeFlag = flag;
 	}
 
+	virtual DWORD checkProcessStatus() = 0;	//非常地需要
 
 protected:
 	virtual bool IsHookTarget(MODULE_INFO& info)
@@ -66,6 +71,8 @@ protected:
 
 		return false;
 	}
+
+
 };
 
 /*

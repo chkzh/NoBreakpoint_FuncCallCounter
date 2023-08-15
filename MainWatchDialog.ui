@@ -122,12 +122,12 @@
           <rect>
            <x>10</x>
            <y>120</y>
-           <width>79</width>
+           <width>131</width>
            <height>20</height>
           </rect>
          </property>
          <property name="text">
-          <string>系统模块</string>
+          <string>系统模块（不推荐）</string>
          </property>
         </widget>
        </widget>

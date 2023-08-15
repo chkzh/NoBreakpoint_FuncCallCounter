@@ -59,12 +59,13 @@ public:
 	PVOID locateEntry(int RecordIndex) override;
 	bool open(const char* lpExePath) override;
 	void stop() override;
-	void detach() override;
+	void detach() override;	//【禁用】
 	bool install() override;
 	bool uninstall() override;
 	//void setHookTarget(DWORD flag) override;
 
+	DWORD checkProcessStatus() override;
+
 private:
-	////【接口】
-	//bool IsHookTarget(MODULE_INFO& info) override;
+
 };

@@ -66,6 +66,8 @@ bool MyInject::open(const char* lpExePath)
 	if (!result)
 		return false;
 
+	this->ProcessStatusFlag |= PS_PROCESS_AVAILABLE;
+
 	this->hProc = pi.hProcess;
 	this->ProcId = pi.dwProcessId;
 	this->ExeImageBase = GetProcImageBase(this->hProc, NULL);
@@ -84,6 +86,8 @@ void MyInject::stop()
 		TerminateProcess(this->hProc, 0);
 		CloseHandle(this->hProc);
 		this->hProc = NULL;
+
+		this->ProcessStatusFlag &= ~PS_PROCESS_AVAILABLE;
 	}
 	this->ProcId = -1;
 	this->ExeImageBase = NULL;
@@ -117,6 +121,17 @@ bool MyInject::uninstall()
 {
 	holder->clear(true);
 	return true;
+}
+
+DWORD MyInject::checkProcessStatus()
+{
+	WORD magic;
+	if (!ReadProcessMemory(this->hProc, this->ExeImageBase, &magic, sizeof(WORD), NULL))
+	{
+		this->ProcessStatusFlag &= ~PS_PROCESS_AVAILABLE;
+	}
+
+	return this->ProcessStatusFlag;
 }
 
 //void MyInject::getSnapshot()
@@ -173,6 +188,9 @@ bool MyInject::install()
 
 std::vector<CALL_DATA_ENTRY>* MyInject::visitLatestRecords()
 {
+	//if (!(this->ProcessStatusFlag & PS_PROCESS_AVAILABLE))
+	//	return NULL;
+
 	this->holder->update();
 	return &(this->holder->CallRecords);
 }

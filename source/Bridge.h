@@ -12,6 +12,7 @@ extern MyDbg _my_dbg;
 extern MyInject _my_inject;
 extern MyProc* UsingProc;
 extern std::string CurExePath;
+extern std::string CurExeName;
 
 extern int CurDataTypeIndex;
 extern int CurFilterTypeIndex;
@@ -23,6 +24,7 @@ extern QString CurExtraParam;
 extern QString CurPrintCount;
 
 extern bool flag_IsProcessing;
+extern bool flag_IsHooked;
 
 extern int CurChangedCount;
 
@@ -33,11 +35,13 @@ typedef struct _RECORD_INFO_ENTRY
 		float frq;
 	}val;
 
+	RECORD_SOURCE source;
+
 	std::string func_name;
 	std::string importer_name;
 	std::string exporter_name;
 
-	//∂ÓÕ‚–≈œ¢
+	//È¢ùÂ§ñ‰ø°ÊÅØ
 	PVOID func_address;
 	PVOID overwritten_address;
 	PVOID dispatching_entry_address;
@@ -76,7 +80,7 @@ bool bkSetSortType(int index, QString& param, QString& count);
 bool bkSetFilterType(int index, QString& param1, QString& param2);
 
 void bkClose();
-bool bkOpen();
+bool bkSelectFile();
 bool bkStart();
 bool bkRestart();
 bool bkDetach();

@@ -12,6 +12,7 @@ MyInject _my_inject;
 MyProc* UsingProc;
 PROC_MODE CurMode = PROC_MODE::PM_INJECT;
 std::string CurExePath;
+std::string CurExeName;
 
 int CurDataTypeIndex = 0;
 int CurFilterTypeIndex = -1;
@@ -25,6 +26,7 @@ QString CurExtraParam;
 QString CurPrintCount;
 
 bool flag_IsProcessing = false;
+bool flag_IsHooked = false;
 
 std::vector<RECORD_INFO_ENTRY> CurToShowRecords;
 int CurChangedCount;
@@ -176,7 +178,7 @@ bool bkSetSortType(int index, QString& param, QString& count)
 	return true;
 }
 
-bool bkOpen()
+bool bkSelectFile()
 {
 	if (CurExePath.empty())
 		return false;
@@ -184,13 +186,22 @@ bool bkOpen()
 	if (flag_IsProcessing)
 		return false;
 
-	if (!UsingProc->open(CurExePath.c_str()))
-	{
-		printf("打开文件失败！，文件名：%s\n", CurExePath.c_str());
-		return false;
-	}
+	//if (!UsingProc->open(CurExePath.c_str()))
+	//{
+	//	printf("打开文件失败！，文件名：%s\n", CurExePath.c_str());
+	//	return false;
+	//}
 
-	flag_IsProcessing = true;
+	int index = CurExePath.rfind('\\');
+	if (index == std::string::npos)
+		index = CurExePath.rfind('/');
+
+	if (index == std::string::npos)
+		CurExeName = CurExePath;
+	else
+		CurExeName = CurExePath.substr(index + 1);
+
+	//flag_IsProcessing = true;
 	return true;
 }
 
@@ -199,7 +210,11 @@ void bkClose()
 	if (!flag_IsProcessing)
 		return;
 
-	UsingProc->stop();
+	//UsingProc->stop();
+	_my_dbg.stop();
+	_my_inject.stop();
+
+	flag_IsProcessing = false;
 	return;
 }
 
@@ -247,12 +262,18 @@ bool bkDetach()
 bool bkInstall()
 {
 	UsingProc->install();
+
+	flag_IsHooked = true;
+
 	return true;
 }
 
 bool bkUninstall()
 {
 	UsingProc->uninstall();
+
+	flag_IsHooked = false;
+
 	return true;
 }
 
@@ -280,6 +301,8 @@ void bkRefresh()
 		info.overwritten_address = details.overwritten_address;
 		info.dispatching_entry_address = details.dispatching_entry_address;
 
+		info.source = details.source;
+
 		CurToShowRecords.push_back(info);
 	}
 
@@ -302,6 +325,23 @@ void bkQurey(int index, QString& extra_info)
 	QString str_entry_locate = "0x" + QString::number((UPVOID)entry_locate, 16);
 	QString str_overwritten_addr = "0x" + QString::number((UPVOID)overwritten_addr, 16);
 
-	extra_info = "函数地址：" + str_func_addr + "\n" + "分发表地址：" + str_entry_locate + "\n" + "钩取发生位置：" + str_func_addr;
+	QString str_source;
+	switch (CurToShowRecords[index].source)
+	{
+	case RS_GetProcAddress:
+		str_source = "GetProcAddress";
+		break;
+	case RS_ImportAddressTable:
+		str_source = "导入表";
+		break;
+	default:
+		str_source = "( ? )";
+	}
+
+	extra_info = "函数地址：" + str_func_addr + "\n"
+		+ "分发表地址：" + str_entry_locate + "\n"
+		+ "钩取发生位置：" + str_overwritten_addr + "\n"
+		+ "来源：" + str_source;
+
 	return;
 }

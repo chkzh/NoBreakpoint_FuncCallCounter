@@ -31,6 +31,7 @@ private:
     QValidator* CountLimiter;
 
     QTimer RefreshClock;
+    QTimer UpdateStatusClock;
 
     int old_tab_height;
     bool is_first_resize;
@@ -63,6 +64,9 @@ private slots:
     void Restart();
     void Detach();
     void StopProc();
+
+    //更新状态
+    void UpdateStatus();
 
 private:
     //杂项函数

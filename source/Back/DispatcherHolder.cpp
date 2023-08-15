@@ -159,7 +159,7 @@ bool Dispatcher::init(DWORD desired_capability)
 	this->DataSize = sizeof(REMOTE_CALL_DATA_ENTRY) * desired_capability;
 	this->TextSize = this->DispatcherHead.size() + this->DispatchingEntry.size() * desired_capability;
 
-	this->TextSectionAddr = VirtualAllocEx(ProcHandle, NULL, this->TextSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	this->TextSectionAddr = VirtualAllocEx(ProcHandle, NULL, this->TextSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READ);
 	this->DataSectionAddr = VirtualAllocEx(ProcHandle, NULL, this->DataSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
 	if (!this->TextSectionAddr || !this->DataSectionAddr)
@@ -182,9 +182,14 @@ bool Dispatcher::init(DWORD desired_capability)
 	else
 		RelocateDispatcherHead(this->DispatcherHead, (UPVOID)DataSectionAddr);
 
+	/*
+		[BUG RECORD 2023-8-15]: 
+		In dllmain of comctl32.dll, "Call ds ptr: <GetVersionExW>" to an ERW-protect page will cause ACCESS_VIOLATION
+	*/
 	DWORD new_protect = PAGE_EXECUTE_READWRITE, old_protect;
-	WriteProcessMemory(this->ProcHandle, this->CurTextPtr, this->DispatcherHead.data(), this->DispatcherHead.size(), NULL);
 	VirtualProtectEx(this->ProcHandle, this->CurTextPtr, this->DispatcherHead.size(), new_protect, &old_protect);
+	WriteProcessMemory(this->ProcHandle, this->CurTextPtr, this->DispatcherHead.data(), this->DispatcherHead.size(), NULL);
+	VirtualProtectEx(this->ProcHandle, this->CurTextPtr, this->DispatcherHead.size(), old_protect, &new_protect);
 	FlushInstructionCache(this->ProcHandle, this->CurTextPtr, this->DispatcherHead.size());
 	this->CurTextPtr += DispatcherHead.size();
 
@@ -350,17 +355,19 @@ void DynamicDispatcherHolder::update()
 PVOID DynamicDispatcherHolder::locateDispatchingEntry(DWORD index)
 {
 	Dispatcher* p_targ = NULL;
-	DWORD count = 0;
+	DWORD range_1 = 0, range_2 = 0;
 	DWORD r_index = 0;
 	for (int i = 0; i < this->p_Disps.size(); i++)
 	{
-		count += p_Disps[i]->committed_count();
-		if (index < count)
+		range_2 = p_Disps[i]->committed_count();
+		if (index >= range_1 && index < range_2)
 		{
-			r_index = count - p_Disps[i]->committed_count();
-			p_targ = p_Disps[i];
+			r_index = index - range_1;
+			p_targ = this->p_Disps[i];
 			break;
 		}
+
+		range_1 = range_2;
 	}
 
 	if (!p_targ)

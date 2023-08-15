@@ -69,6 +69,9 @@ void DataPicker::sort(int limit_size)
 
 void DataPicker::pick()
 {
+	if (!(proc->checkProcessStatus() & PS_PROCESS_AVAILABLE))
+		return;
+
 	std::vector<CALL_DATA_ENTRY>* p_records = proc->visitLatestRecords();
 
 	this->LastUpdateTime = this->CurUpdateTime;

@@ -28,7 +28,10 @@ FuncWatcherDialog::FuncWatcherDialog(QWidget *parent)
 }
 
 FuncWatcherDialog::~FuncWatcherDialog()
-{}
+{
+    UpdateStatusClock.stop();
+    RefreshClock.stop();
+}
 
 void FuncWatcherDialog::init()
 {
@@ -60,8 +63,12 @@ void FuncWatcherDialog::init()
     connect(ui.actionDetach, SIGNAL(triggered()), this, SLOT(Detach()));
     connect(ui.actionRestart, SIGNAL(triggered()), this, SLOT(Restart()));
 
-    RefreshClock.setInterval(5000);
+    RefreshClock.setInterval(3000);
     connect(&RefreshClock, SIGNAL(timeout()), this, SLOT(RefreshData()));
+
+    UpdateStatusClock.setInterval(1000);
+    connect(&UpdateStatusClock, SIGNAL(timeout()), this, SLOT(UpdateStatus()));
+    UpdateStatusClock.start();
 
     ui.tableWidget->setHorizontalHeaderLabels(QStringList() << "数值" << "函数名" << "导入方" << "导出方");
    // ui.tableWidget->
@@ -125,6 +132,12 @@ void FuncWatcherDialog::UninstallHooks()
 
 void FuncWatcherDialog::InstallAndStart()
 {
+    if (flag_IsHooked)
+    {
+        ui.statusBar->showMessage(" * 请先卸载原有钩子！");
+        return;
+    }
+
     bkInstall();
     ui.statusBar->showMessage("已安装钩子");
 }
@@ -214,7 +227,7 @@ void FuncWatcherDialog::SetLoopMode(bool is_on)
     if (is_on)
     {
         RefreshClock.start();
-        reply = "循环已启动，5秒/次";
+        reply = "循环已启动，3秒/次";
     }
     else
     {
@@ -226,6 +239,7 @@ void FuncWatcherDialog::SetLoopMode(bool is_on)
 
 void FuncWatcherDialog::RefreshData()
 {
+    ui.textEdit_MoreInfo->clear();
     ui.tableWidget->setRowCount(0);
 
     if (!flag_IsProcessing)
@@ -274,7 +288,7 @@ void FuncWatcherDialog::ShowHelp()
 void FuncWatcherDialog::ExecuteCommand()
 {
     ui.statusBar->showMessage("Executing a command..");
-    ui.textEdit_reply->setText(ui.lineEdit_cmd->text());
+    ui.textEdit_reply->setText("暂不支持  > _ <;");
 }
 
 void FuncWatcherDialog::OpenFile()
@@ -285,10 +299,13 @@ void FuncWatcherDialog::OpenFile()
     if (fileDialog->exec() == QDialog::Accepted)
     {
         QString fileName = fileDialog->selectedFiles().first();
-        ui.statusBar->showMessage(fileName);
+        ui.statusBar->showMessage(fileName, 3);
         
-        CurExePath = fileName.toStdString();
+        CurExePath = fileName.toLocal8Bit().toStdString();
+        bkSelectFile();
     }
+
+    UpdateStatus();
 }
 
 void FuncWatcherDialog::StartProc()
@@ -302,6 +319,7 @@ void FuncWatcherDialog::StartProc()
     else
         reply = "* * * 创建进程失败！";
 
+    UpdateStatus();
     ui.statusBar->showMessage(reply);
 }
 
@@ -309,10 +327,14 @@ void FuncWatcherDialog::Restart()
 {
     QString reply;
     if (bkRestart())
+    {
         reply = "已重启进程";
+        _LockAndGetOnStart();
+    }
     else
         reply = "* * * 重启进程失败！";
 
+    UpdateStatus();
     ui.statusBar->showMessage(reply);
 }
 
@@ -333,7 +355,29 @@ void FuncWatcherDialog::Detach()
 void FuncWatcherDialog::StopProc()
 {
     bkClose();
+    _UnlockOnClose();
+    if (CurMode == PM_INJECT)
+        SetInjectMode(true);
+    else
+        SetDebugMode(true);
+
+    UpdateStatus();
     ui.statusBar->showMessage("进程已终止");
+}
+
+void FuncWatcherDialog::UpdateStatus()
+{
+    QString title = QString::fromStdString(CurExeName);
+
+    DWORD status = UsingProc->checkProcessStatus();
+    if (!(status & PS_PROCESS_AVAILABLE) && flag_IsProcessing)
+        title = "（已无效）" + title;
+    else if (flag_IsProcessing)
+        title = "（已启动）" + title;
+    else
+        title = "（未启动）" + title;
+
+    this->setWindowTitle(title);
 }
 
 void FuncWatcherDialog::_InsertRecord(std::string& dat, std::string& func_name, std::string& importer, std::string& exporter)
@@ -354,10 +398,15 @@ void FuncWatcherDialog::_LockAndGetOnStart()
     ui.checkBox_Gpa->setDisabled(true);
     ui.checkBox_Iat->setDisabled(true);
 
-    ui.checkBox_lvl1->setDisabled(true);
-    ui.checkBox_lvl2->setDisabled(true);
-    ui.checkBox_lvl3->setDisabled(true);
-    ui.checkBox_lvl4->setDisabled(true);
+    if (CurMode != PM_INJECT) {
+        ui.checkBox_lvl1->setDisabled(true);
+        ui.checkBox_lvl2->setDisabled(true);
+        ui.checkBox_lvl3->setDisabled(true);
+        ui.checkBox_lvl4->setDisabled(true);
+
+        //ui.pushButton_Install->setDisabled(true);
+        //ui.pushButton_Undo->setDisabled(true);
+    }
 
     DWORD typ_flag = 0;
     if (ui.checkBox_Gpa->isChecked())
@@ -387,10 +436,15 @@ void FuncWatcherDialog::_UnlockOnClose()
     ui.checkBox_Gpa->setDisabled(false);
     ui.checkBox_Iat->setDisabled(false);
 
-    ui.checkBox_lvl1->setDisabled(false);
-    ui.checkBox_lvl2->setDisabled(false);
-    ui.checkBox_lvl3->setDisabled(false);
-    ui.checkBox_lvl4->setDisabled(false);
+    if (CurMode != PM_INJECT) {
+        ui.checkBox_lvl1->setDisabled(false);
+        ui.checkBox_lvl2->setDisabled(false);
+        ui.checkBox_lvl3->setDisabled(false);
+        ui.checkBox_lvl4->setDisabled(false);
+
+        //ui.pushButton_Install->setDisabled(false);
+        //ui.pushButton_Undo->setDisabled(false);
+    }
 
     if (CurMode == PROC_MODE::PM_DBG)
         SetDebugMode(true);

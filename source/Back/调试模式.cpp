@@ -293,6 +293,8 @@ bool MyDbg::_debug_thread_routine(MyDbg* _this)
 	if (!result)
 		return result;
 
+	_this->ProcessStatusFlag |= PS_PROCESS_AVAILABLE;	//更新状态
+
 	// 初始化各种重要对象
 	//this->ExeFilePath = lpExePath;
 	_this->hMainThread = pi.hThread;
@@ -320,6 +322,10 @@ bool MyDbg::_debug_thread_routine(MyDbg* _this)
 	_this->setBreakPoint(p_info->MainEntry, "Exe Main()");
 	_this->enableBreakPoint(p_info->MainEntry, true);
 
+	//首先设置好标识
+	_this->KillRequsetFlag = false;
+	_this->DetachRequestFlag = false;
+
 	//
 	// 进入调试器循环
 	//
@@ -342,6 +348,8 @@ bool MyDbg::_debug_thread_routine(MyDbg* _this)
 	else if(_this->KillRequsetFlag)
 		TerminateProcess(_this->hProc, 0x114514);
 	//（如果满足不了上述的条件，说明调试过程出现问题）
+
+	_this->ProcessStatusFlag &= ~PS_PROCESS_AVAILABLE;
 
 	//
 	// 关闭句柄
@@ -655,15 +663,16 @@ bool MyDbg::TryHandleDllMainBreakPoint(DEBUG_EVENT& de)
 
 	StepOverBreakPoint(de, false);
 
-	if (p_info->ModuleName == "comctl32.dll")
-	{
-		printf("dll main entry = %p\n", p_info->MainEntry);
-		printf("dll path = %s\n", p_info->ModulePath.c_str());
-		//HANDLE hThread = this->thread_book[de.dwThreadId].handle;
-		SuspendThread(this->thread_book[de.dwThreadId].handle);
-		this->detach();
-		getchar();
-	}
+	//if (p_info->ModuleName == "comctl32.dll")
+	//{
+	//	printf("err address = %p\n", de.u.Exception.ExceptionRecord.ExceptionAddress);
+	//	printf("dll main entry = %p\n", p_info->MainEntry);
+	//	printf("dll path = %s\n", p_info->ModulePath.c_str());
+	//	HANDLE hThread = this->thread_book[de.dwThreadId].handle;
+	//	SuspendThread(this->thread_book[de.dwThreadId].handle);
+	//	this->DetachRequestFlag = true;
+	//	//getchar();
+	//}
 
 	printf("\nMyDbg:\t检测到 DllMain断点。\n\t所属模块：%s\n", p_info->ModuleName.c_str());
 
@@ -759,6 +768,8 @@ void MyDbg::detach()
 		this->DetachRequestFlag = false;
 	}
 
+	this->ProcessStatusFlag &= ~PS_PROCESS_AVAILABLE;
+
 	printf("---------------------------------------\n");
 	printf("已脱离调试，被调试进程ID：%d\n", this->ProcId);
 
@@ -816,6 +827,9 @@ std::string MyDbg::getComment(PVOID addr)
 
 std::vector<CALL_DATA_ENTRY>* MyDbg::visitLatestRecords()
 {
+	//if (!(this->ProcessStatusFlag & PS_PROCESS_AVAILABLE))
+	//	return NULL;
+
 	EnterCriticalSection(&CallRecordLock);
 	this->holder->update();
 	return &(this->holder->CallRecords);
@@ -838,6 +852,19 @@ PVOID MyDbg::locateEntry(int RecordIndex)
 	}
 	else
 		return NULL;
+}
+
+DWORD MyDbg::checkProcessStatus()
+{
+
+	//检查是否能够正常读取
+	WORD magic;
+	if (!ReadProcessMemory(this->hProc, this->ExeImageBase, &magic, sizeof(WORD), NULL))
+	{
+		this->ProcessStatusFlag &= ~PS_PROCESS_AVAILABLE;
+	}
+
+	return this->ProcessStatusFlag;
 }
 
 void MyDbg::getDetails(int RecordIndex, CALL_RECORD_DETAILS& details)
