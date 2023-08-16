@@ -82,15 +82,17 @@ enum MODULE_SOURCE
 typedef struct _MODULE_INFO
 {
 	PVOID ModuleImageBase;
-	PVOID IatTableAddress;
-	PVOID EatTableAddress;
+	PVOID IDTAddress;
+	PVOID EDTAddress;
+	PVOID IATAddress;
 	PVOID MainEntry;
 	PVOID NtHeaderAddress;
 	PVOID SectionHeadersAddress;
 	MODULE_SOURCE Source;
 	DWORD ModuleSize;
-	DWORD IatTableSize;
-	DWORD EatTableSize;
+	DWORD IDTSize;
+	DWORD EDTSize;
+	DWORD IATSize;
 	DWORD SectionHeaderCount;
 	std::string ModulePath;
 	std::string ModuleName;
@@ -177,7 +179,7 @@ typedef struct IAT_TASK_ENTRY
 typedef struct _MODULE_IAT_PACK
 {
 	PVOID DllImageBase;
-	DWORD IatTableRva;
+	DWORD IatTableRva;		//IMPORT_ADDRESS_TABLE, NOT IMPORT_TABLE！
 	DWORD IatTableSize;
 	DWORD BeginIndex;
 	DWORD EndIndex;

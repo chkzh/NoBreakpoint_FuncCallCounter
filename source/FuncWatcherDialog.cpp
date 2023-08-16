@@ -63,7 +63,7 @@ void FuncWatcherDialog::init()
     connect(ui.actionDetach, SIGNAL(triggered()), this, SLOT(Detach()));
     connect(ui.actionRestart, SIGNAL(triggered()), this, SLOT(Restart()));
 
-    RefreshClock.setInterval(3000);
+    RefreshClock.setInterval(2000);
     connect(&RefreshClock, SIGNAL(timeout()), this, SLOT(RefreshData()));
 
     UpdateStatusClock.setInterval(1000);
@@ -73,7 +73,7 @@ void FuncWatcherDialog::init()
     ui.tableWidget->setHorizontalHeaderLabels(QStringList() << "数值" << "函数名" << "导入方" << "导出方");
    // ui.tableWidget->
 
-    std::string str1 = "123";
+    std::string str1 = "1145.14";
     std::string str2 = "ExAllocateFromPagedPool";
     std::string str3 = "Not My Fault.exe";
     std::string str4 = "Ntoskrnl.exe";
@@ -252,7 +252,10 @@ void FuncWatcherDialog::RefreshData()
     {
         std::string val_str;
         if (CurDataTypeIndex == DT_RECENT_FREQUENCY)
+        {
             val_str = std::to_string(ite->val.frq);
+            val_str = val_str.substr(0, val_str.find(".") + 3);
+        }
         else
             val_str = std::to_string(ite->val.cnt);
 
@@ -261,10 +264,10 @@ void FuncWatcherDialog::RefreshData()
         ite++;
     }
 
-    if (CurToShowRecords.size()) {
-        ui.tableWidget->resizeRowsToContents();
-        ui.tableWidget->resizeColumnsToContents();
-    }
+    //if (CurToShowRecords.size()) {
+    //    ui.tableWidget->resizeRowsToContents();
+    //    ui.tableWidget->resizeColumnsToContents();
+    //}
 
     QString str = "检测到 " + QString::number(CurChangedCount) + " 条调用记录";
 
@@ -275,6 +278,8 @@ void FuncWatcherDialog::GetMoreInfo(int index, int index_2)
 {
     QString more_info;
     bkQurey(index, more_info);
+    more_info = ui.tableWidget->item(index, index_2)->text() + "\n" + more_info;
+
     ui.textEdit_MoreInfo->setText(more_info);
 
     ui.statusBar->showMessage("已显示补充信息");

@@ -86,11 +86,11 @@ bool ModuleParser::WalkIatTableOfTheModule(PVOID ModuleBaseAddress, MODULE_IAT_P
 
 	if (p_task) {
 		p_task->DllImageBase = ModuleBaseAddress;
-		p_task->IatTableRva = (UPVOID)ite_mod->second.IatTableAddress - (UPVOID)ModuleBaseAddress;
-		p_task->IatTableSize = ite_mod->second.IatTableSize;
+		p_task->IatTableRva = (UPVOID)ite_mod->second.IATAddress - (UPVOID)ModuleBaseAddress;
+		p_task->IatTableSize = ite_mod->second.IATSize;
 	}
 
-	PIMAGE_IMPORT_DESCRIPTOR p_iid = (PIMAGE_IMPORT_DESCRIPTOR)ite_mod->second.IatTableAddress;
+	PIMAGE_IMPORT_DESCRIPTOR p_iid = (PIMAGE_IMPORT_DESCRIPTOR)ite_mod->second.IDTAddress;
 	IMAGE_IMPORT_DESCRIPTOR iid;
 	do
 	{
@@ -172,16 +172,16 @@ bool ModuleParser::Wow64_WalkIatTableOfTheModule(PVOID ModuleBaseAddress, MODULE
 	}
 	else
 	{
-		//printf("\n正在解析模块：%s\n", ite_mod->second.ModuleName.c_str());
+		printf("\n正在解析模块：%s\n", ite_mod->second.ModuleName.c_str());
 	}
 
 	if (p_task) {
 		p_task->DllImageBase = ModuleBaseAddress;
-		p_task->IatTableRva = (UPVOID)ite_mod->second.IatTableAddress - (UPVOID)ModuleBaseAddress;
-		p_task->IatTableSize = ite_mod->second.IatTableSize;
+		p_task->IatTableRva = (UPVOID)ite_mod->second.IATAddress - (UPVOID)ModuleBaseAddress;
+		p_task->IatTableSize = ite_mod->second.IATSize;
 	}
 
-	PIMAGE_IMPORT_DESCRIPTOR p_iid = (PIMAGE_IMPORT_DESCRIPTOR)ite_mod->second.IatTableAddress;
+	PIMAGE_IMPORT_DESCRIPTOR p_iid = (PIMAGE_IMPORT_DESCRIPTOR)ite_mod->second.IDTAddress;
 	IMAGE_IMPORT_DESCRIPTOR iid;
 	do
 	{
@@ -202,7 +202,7 @@ bool ModuleParser::Wow64_WalkIatTableOfTheModule(PVOID ModuleBaseAddress, MODULE
 
 		std::string dll_name;
 		this->readString(p_name, dll_name);
-		//printf("\tDLL Name: %s\n", dll_name.c_str());
+		printf("\tDLL Name: %s\n", dll_name.c_str());
 
 		int index = dll_name.rfind('\\');
 		if (index != std::string::npos)
@@ -237,7 +237,7 @@ bool ModuleParser::Wow64_WalkIatTableOfTheModule(PVOID ModuleBaseAddress, MODULE
 			else
 				this->tryAddApi((PVOID)_iat.u1.Function, func_name.c_str(), -1, NULL);
 
-			//printf("\t\t%X\t%s\n", _iat.u1.Function, func_name.c_str());
+			printf("\t\t%X -> %X -> %s\n", (UPVOID)p_iat, _iat.u1.Function, func_name.c_str());
 
 			if (p_task) {
 				IAT_TASK_ENTRY pibd;
@@ -280,7 +280,7 @@ PVOID ModuleParser::getProcAddr(PVOID dll_image_base, std::string& function_name
 	if (!p_mod)
 		return NULL;
 
-	PIMAGE_EXPORT_DIRECTORY p_export_table = (PIMAGE_EXPORT_DIRECTORY)p_mod->EatTableAddress;
+	PIMAGE_EXPORT_DIRECTORY p_export_table = (PIMAGE_EXPORT_DIRECTORY)p_mod->EDTAddress;
 	IMAGE_EXPORT_DIRECTORY export_table;
 	PDWORD p_function_table_base;
 	PDWORD p_name_table_base;	//名称数组
@@ -350,7 +350,7 @@ PVOID ModuleParser::getProcAddr(PVOID dll_image_base, DWORD oridinal, PVOID* exp
 	if (!p_mod)
 		return NULL;
 
-	PIMAGE_EXPORT_DIRECTORY p_export_table = (PIMAGE_EXPORT_DIRECTORY)p_mod->EatTableAddress;
+	PIMAGE_EXPORT_DIRECTORY p_export_table = (PIMAGE_EXPORT_DIRECTORY)p_mod->EDTAddress;
 	IMAGE_EXPORT_DIRECTORY export_table;
 	PDWORD p_function_table_base;
 	PDWORD p_name_table_base;
@@ -470,10 +470,12 @@ MODULE_INFO* ModuleParser::tryAddModule(PVOID DllImageBase, bool* is_added_this_
 		ReadProcessMemory(this->ProcHandle, (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_rva), &nt_header, sizeof(IMAGE_NT_HEADERS32), NULL);
 
 		mod_info.ModuleSize = nt_header.OptionalHeader.SizeOfImage;
-		mod_info.IatTableAddress = (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
-		mod_info.EatTableAddress = (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
-		mod_info.IatTableSize = nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size;
-		mod_info.EatTableSize = nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
+		mod_info.IDTAddress = (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+		mod_info.EDTAddress = (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+		mod_info.IATAddress = (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress);
+		mod_info.IDTSize = nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size;
+		mod_info.EDTSize = nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
+		mod_info.IATSize = nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size;
 		mod_info.MainEntry = nt_header.OptionalHeader.AddressOfEntryPoint + (PUCHAR)DllImageBase;
 		mod_info.SectionHeadersAddress = (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_rva + sizeof(IMAGE_NT_HEADERS32));
 		mod_info.SectionHeaderCount = nt_header.FileHeader.NumberOfSections;
@@ -483,10 +485,12 @@ MODULE_INFO* ModuleParser::tryAddModule(PVOID DllImageBase, bool* is_added_this_
 		ReadProcessMemory(this->ProcHandle, (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_rva), &nt_header, sizeof(IMAGE_NT_HEADERS), NULL);
 
 		mod_info.ModuleSize = nt_header.OptionalHeader.SizeOfImage;
-		mod_info.IatTableAddress = (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
-		mod_info.EatTableAddress = (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
-		mod_info.IatTableSize = nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size;
-		mod_info.EatTableSize = nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
+		mod_info.IDTAddress = (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+		mod_info.EDTAddress = (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+		mod_info.IATAddress = (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress);
+		mod_info.IDTSize = nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size;
+		mod_info.EDTSize = nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
+		mod_info.IATSize = nt_header.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size;
 		mod_info.MainEntry = nt_header.OptionalHeader.AddressOfEntryPoint + (PUCHAR)DllImageBase;
 		mod_info.SectionHeadersAddress = (PVOID)((UPVOID)mod_info.ModuleImageBase + nt_rva + sizeof(IMAGE_NT_HEADERS));
 		mod_info.SectionHeaderCount = nt_header.FileHeader.NumberOfSections;

@@ -144,10 +144,18 @@ void StaticDispatcherHolder::installHooks(int TaskIndex)
 	auto ite = task.IatHookList.begin();
 	while (ite != task.IatHookList.end())
 	{
+		bool result = false;
 		if (IsWow64)
-			WriteProcessMemory(this->ProcHandle, ite->ToWriteAddress, &ite->HookedAddress, sizeof(ULONG32), NULL);
+			result = WriteProcessMemory(this->ProcHandle, ite->ToWriteAddress, &ite->HookedAddress, sizeof(ULONG32), NULL);
 		else
-			WriteProcessMemory(this->ProcHandle, ite->ToWriteAddress, &ite->HookedAddress, sizeof(ULONG64), NULL);
+			result = WriteProcessMemory(this->ProcHandle, ite->ToWriteAddress, &ite->HookedAddress, sizeof(ULONG64), NULL);
+		
+		if (!result)
+		{
+			printf("严重错误：修改IAT失败！\n");
+			getchar();
+		}
+
 		ite++;
 	}
 
@@ -207,11 +215,18 @@ PVOID Dispatcher::commit(PVOID function_address)
 	RelocateDispatchingEntry(this->DispatchingEntry, this->CommittedCount, entry_rva);
 
 	DWORD new_protect = PAGE_EXECUTE_READWRITE, old_protect;
+	bool result = false;
 	VirtualProtectEx(this->ProcHandle, this->CurTextPtr, this->DispatchingEntry.size(), new_protect, &old_protect);
-	WriteProcessMemory(this->ProcHandle, this->CurTextPtr, this->DispatchingEntry.data(), this->DispatchingEntry.size(), NULL);
+	result = WriteProcessMemory(this->ProcHandle, this->CurTextPtr, this->DispatchingEntry.data(), this->DispatchingEntry.size(), NULL);
 	VirtualProtectEx(this->ProcHandle, this->CurTextPtr, this->DispatchingEntry.size(), old_protect, &new_protect);
 	FlushInstructionCache(this->ProcHandle, this->CurTextPtr, this->DispatchingEntry.size());
 	this->CurTextPtr += this->DispatchingEntry.size();
+
+	if (!result)
+	{
+		printf("严重错误：安装分发项失败！\n");
+		getchar();
+	}
 
 	REMOTE_CALL_DATA_ENTRY rcde;
 	rcde.CallCount = 0;
@@ -260,7 +275,8 @@ bool DynamicDispatcherHolder::spawnNewDispatcher(int desired_count)
 //提交IAT包
 bool DynamicDispatcherHolder::commit(MODULE_IAT_PACK& task)
 {
-	printf("\nDynamic_Dispatcher_Holder:\n\tIAT任务数目：%d\n\t总表：%d -> ", (DWORD)task.IatHookList.size(), (DWORD)this->CallRecords.size());
+	printf("\nDynamic_Dispatcher_Holder:\n\tIAT任务数目：%d\n\t总表：%d -> %d", 
+		(DWORD)task.IatHookList.size(), (DWORD)this->CallRecords.size(), (DWORD)this->CallRecords.size() + (DWORD)task.IatHookList.size());
 
 	CALL_DATA_ENTRY ent;
 
@@ -278,10 +294,25 @@ bool DynamicDispatcherHolder::commit(MODULE_IAT_PACK& task)
 
 		ite->HookedAddress = CurDisp->commit(ite->OriFuncEntry);
 
+		printf("\t%p: %p -> %p\n", ite->ToWriteAddress, ite->HookedAddress, ite->OriFuncEntry);
+
+		if (ite->ToWriteAddress == (PVOID)0x83C45C)
+		{
+			printf("oops!\n");
+		}
+
+		bool result = false;
+
 		if(IsWow64)
-			WriteProcessMemory(this->ProcHandle, ite->ToWriteAddress, &ite->HookedAddress, sizeof(ULONG32), NULL);
+			result = WriteProcessMemory(this->ProcHandle, ite->ToWriteAddress, &ite->HookedAddress, sizeof(ULONG32), NULL);
 		else
-			WriteProcessMemory(this->ProcHandle, ite->ToWriteAddress, &ite->HookedAddress, sizeof(ULONG64), NULL);
+			result = WriteProcessMemory(this->ProcHandle, ite->ToWriteAddress, &ite->HookedAddress, sizeof(ULONG64), NULL);
+
+		if (!result)
+		{
+			printf("严重错误：修改IAT失败！\n");
+			getchar();
+		}
 		
 		ent.CurCallCount = 0;
 		ent.LastCallCount = 0;
@@ -292,7 +323,6 @@ bool DynamicDispatcherHolder::commit(MODULE_IAT_PACK& task)
 		ite++;
 	}
 	VirtualProtectEx(this->ProcHandle, iat_addr, task.IatTableSize, old_protect, &new_protect);
-	printf("%d\n", (DWORD)this->CallRecords.size());
 
 	return true;
 }
